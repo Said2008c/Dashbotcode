@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% if mode == 'register' %}Register{% else %}Login{% endif %} — PteroDash</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#0d1117;--card:#161b22;--border:#21262d;
+      --fg:#c9d1d9;--fg-muted:#6e7681;
+      --neon:#b44aff;--neon-dim:rgba(180,74,255,.15);
+      --neon-glow:0 0 20px rgba(180,74,255,.35),0 0 60px rgba(180,74,255,.12);
+      --red:#f85149;--radius:12px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(33,38,45,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(33,38,45,.5) 1px,transparent 1px);background-size:50px 50px;z-index:0}
+    .auth-wrapper{position:relative;z-index:1;width:100%;max-width:420px;padding:20px}
+    .logo{text-align:center;margin-bottom:32px}
+    .logo h1{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:var(--neon);text-shadow:0 0 12px rgba(180,74,255,.7),0 0 40px rgba(180,74,255,.4);letter-spacing:-1px}
+    .logo span{color:var(--fg-muted);font-size:13px;display:block;margin-top:4px}
+    .auth-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:32px 28px;box-shadow:var(--neon-glow)}
+    .auth-card h2{font-family:'JetBrains Mono',monospace;font-size:20px;margin-bottom:6px}
+    .auth-card .subtitle{color:var(--fg-muted);font-size:13px;margin-bottom:24px}
+    .error-box{background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:18px}
+    .bonus-tag{display:inline-block;background:var(--neon-dim);color:var(--neon);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;margin-bottom:20px;border:1px solid rgba(180,74,255,.3)}
+    .field{margin-bottom:18px}
+    .field label{display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--fg-muted);margin-bottom:6px;font-family:'JetBrains Mono',monospace}
+    .field input{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-size:14px;outline:none;transition:border .2s,box-shadow .2s}
+    .field input:focus{border-color:var(--neon);box-shadow:0 0 0 3px var(--neon-dim)}
+    .btn-primary{width:100%;padding:13px;background:var(--neon);color:#fff;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;border:none;border-radius:8px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:box-shadow .2s,transform .1s}
+    .btn-primary:hover{box-shadow:0 0 25px rgba(180,74,255,.55)}
+    .btn-primary:active{transform:scale(.98)}
+    .footer-link{text-align:center;margin-top:20px;font-size:13px;color:var(--fg-muted)}
+    .footer-link a{color:var(--neon);text-decoration:none;font-weight:500}
+    .footer-link a:hover{text-decoration:underline}
+    .particle{position:fixed;width:3px;height:3px;background:var(--neon);border-radius:50%;box-shadow:0 0 6px rgba(180,74,255,.5);opacity:.3;animation:float 6s ease-in-out infinite}
+    .particle:nth-child(1){top:10%;left:15%;animation-delay:0s}
+    .particle:nth-child(2){top:70%;left:80%;animation-delay:2s}
+    .particle:nth-child(3){top:30%;left:65%;animation-delay:4s}
+    .particle:nth-child(4){top:85%;left:25%;animation-delay:1s}
+    .particle:nth-child(5){top:50%;left:90%;animation-delay:3s}
+    @keyframes float{0%,100%{transform:translateY(0) scale(1);opacity:.3}50%{transform:translateY(-20px) scale(1.5);opacity:.6}}
+  </style>
+</head>
+<body>
+  <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
+  <div class="auth-wrapper">
+    <div class="logo">
+      <h1>⚡ PteroDash</h1>
+      <span>Game Server Management</span>
+    </div>
+    <div class="auth-card">
+      {% if mode == 'register' %}
+        <h2>Create Account</h2>
+        <p class="subtitle">Set up your free hosting account</p>
+        <span class="bonus-tag">🎁 50 free coins on signup</span>
+        {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+        <form method="POST" action="{{ url_for('register') }}">
+          <div class="field"><label>Username</label><input type="text" name="username" placeholder="Choose a username" required /></div>
+          <div class="field"><label>Email</label><input type="email" name="email" placeholder="you@example.com" required /></div>
+          <div class="field"><label>Password</label><input type="password" name="password" placeholder="••••••••" required /></div>
+          <button type="submit" class="btn-primary">🚀 Create Account</button>
+        </form>
+        <p class="footer-link">Already have an account? <a href="{{ url_for('login') }}">Sign in →</a></p>
+      {% else %}
+        <h2>Welcome back</h2>
+        <p class="subtitle">Sign in to your account</p>
+        {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+        <form method="POST" action="{{ url_for('login') }}">
+          <div class="field"><label>Username or Email</label><input type="text" name="username" placeholder="Enter username or email" required /></div>
+          <div class="field"><label>Password</label><input type="password" name="password" placeholder="••••••••" required /></div>
+          <button type="submit" class="btn-primary">🔓 Sign In</button>
+        </form>
+        <p class="footer-link">Don't have an account? <a href="{{ url_for('register') }}">Create one →</a></p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
