@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — PteroDash</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#0d1117;--bg-alt:#0a0e14;--card:#161b22;--card-hover:#1c2129;
+      --border:#21262d;--border-bright:#30363d;
+      --fg:#c9d1d9;--fg-muted:#6e7681;--fg-dim:#484f58;
+      --neon:#b44aff;--neon-dim:rgba(180,74,255,.12);--neon-glow:rgba(180,74,255,.35);
+      --purple:#c77dff;--purple-dim:rgba(199,125,255,.12);
+      --cyan:#58d5f0;--cyan-dim:rgba(88,213,240,.12);
+      --red:#f85149;--red-dim:rgba(248,81,73,.12);
+      --yellow:#f0c040;--yellow-dim:rgba(240,192,64,.12);
+      --green:#3fb950;--green-dim:rgba(63,185,80,.12);
+      --orange:#ff9500;--orange-dim:rgba(255,149,0,.12);
+      --radius:12px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh}
+
+    /* ─── TOPBAR ─── */
+    .topbar{position:fixed;top:0;left:0;right:0;height:56px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:100;backdrop-filter:blur(12px);background:rgba(22,27,34,.9)}
+    .topbar-brand{display:flex;align-items:center;gap:10px}
+    .topbar-brand h1{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--neon);text-shadow:0 0 14px var(--neon-glow)}
+    .topbar-right{display:flex;align-items:center;gap:14px}
+    .coin-badge{display:flex;align-items:center;gap:6px;background:var(--yellow-dim);border:1px solid rgba(240,192,64,.25);border-radius:20px;padding:5px 12px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--yellow)}
+    .user-badge{font-size:13px;color:var(--fg-muted)}
+    .btn-logout{background:transparent;border:1px solid var(--border);color:var(--fg-muted);padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .2s;text-decoration:none}
+    .btn-logout:hover{border-color:var(--red);color:var(--red)}
+
+    /* ─── BURGER ─── */
+    .burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;z-index:200}
+    .burger span{display:block;width:24px;height:2px;background:var(--fg);border-radius:2px;transition:all .3s}
+    .burger.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+    .burger.active span:nth-child(2){opacity:0}
+    .burger.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+
+    /* ─── SIDEBAR ─── */
+    .sidebar{position:fixed;top:56px;left:0;bottom:0;width:220px;background:var(--bg-alt);border-right:1px solid var(--border);padding:16px 0;overflow-y:auto;z-index:90;transition:transform .3s}
+    .sidebar a{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--fg-muted);text-decoration:none;font-size:13px;font-weight:500;transition:all .15s;border-left:3px solid transparent}
+    .sidebar a:hover{color:var(--fg);background:rgba(255,255,255,.03)}
+    .sidebar a.active{color:var(--neon);border-left-color:var(--neon);background:var(--neon-dim)}
+    .nav-section{padding:8px 20px 4px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--fg-dim);font-family:'JetBrains Mono',monospace;font-weight:600}
+
+    /* ─── MAIN ─── */
+    .main{margin-left:220px;margin-top:56px;padding:28px;min-height:calc(100vh - 56px)}
+
+    /* ─── FLASH ─── */
+    .flash{padding:12px 18px;border-radius:8px;font-size:13px;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+    .flash-success{background:var(--green-dim);border:1px solid rgba(63,185,80,.3);color:var(--green)}
+    .flash-error{background:var(--red-dim);border:1px solid rgba(248,81,73,.3);color:var(--red)}
+    .flash-warning{background:var(--yellow-dim);border:1px solid rgba(240,192,64,.3);color:var(--yellow)}
+
+    /* ─── SECTION ─── */
+    .section{display:none;animation:fadeIn .3s ease}
+    .section.active{display:block}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .section-title{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;margin-bottom:6px}
+    .section-sub{color:var(--fg-muted);font-size:13px;margin-bottom:24px}
+
+    /* ─── ANNOUNCEMENTS BANNER ─── */
+    .announce-bar{margin-bottom:20px;display:flex;flex-direction:column;gap:8px}
+    .announce-item{padding:12px 18px;border-radius:8px;font-size:13px;display:flex;align-items:flex-start;gap:10px}
+    .announce-item.info{background:var(--cyan-dim);border:1px solid rgba(88,213,240,.25);color:var(--cyan)}
+    .announce-item.warning{background:var(--yellow-dim);border:1px solid rgba(240,192,64,.3);color:var(--yellow)}
+    .announce-item.success{background:var(--green-dim);border:1px solid rgba(63,185,80,.3);color:var(--green)}
+    .announce-item.danger{background:var(--red-dim);border:1px solid rgba(248,81,73,.3);color:var(--red)}
+    .announce-item .ann-body{flex:1}
+    .announce-item .ann-title{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;margin-bottom:2px}
+    .announce-item .ann-text{font-size:12px;opacity:.85}
+    .pinned-badge{font-size:10px;background:rgba(255,255,255,.1);border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+
+    /* ─── STAT CARDS ─── */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;transition:border-color .2s}
+    .stat-card:hover{border-color:var(--border-bright)}
+    .stat-card .label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--fg-muted);font-family:'JetBrains Mono',monospace;margin-bottom:6px}
+    .stat-card .value{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700}
+    .stat-card .value.neon{color:var(--neon)}
+    .stat-card .value.purple{color:var(--purple)}
+    .stat-card .value.cyan{color:var(--cyan)}
+    .stat-card .value.yellow{color:var(--yellow)}
+
+    /* ─── SERVER LIST ─── */
+    .server-grid{display:grid;gap:12px}
+    .server-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;transition:border-color .2s;gap:12px}
+    .server-row:hover{border-color:var(--neon);box-shadow:0 0 15px rgba(180,74,255,.1)}
+    .server-info h3{font-family:'JetBrains Mono',monospace;font-size:14px;margin-bottom:4px}
+    .server-info span{font-size:12px;color:var(--fg-muted)}
+    .server-actions{display:flex;gap:8px;flex-shrink:0}
+    .btn-manage{padding:7px 14px;background:var(--neon-dim);color:var(--neon);border:1px solid rgba(180,74,255,.3);border-radius:8px;font-size:12px;font-family:'JetBrains Mono',monospace;cursor:pointer;text-decoration:none;transition:all .2s}
+    .btn-manage:hover{background:var(--neon);color:#fff}
+    .btn-delete{padding:7px 14px;background:var(--red-dim);color:var(--red);border:1px solid rgba(248,81,73,.25);border-radius:8px;font-size:12px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .2s}
+    .btn-delete:hover{background:var(--red);color:#fff}
+    .empty-state{text-align:center;padding:50px 20px;color:var(--fg-muted)}
+    .empty-state .icon{font-size:40px;margin-bottom:12px}
+    .empty-state p{font-size:13px}
+
+    /* ─── FORMS ─── */
+    .form-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+    .form-row.full{grid-template-columns:1fr}
+    .form-row.three{grid-template-columns:1fr 1fr 1fr}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-group label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--fg-muted);font-family:'JetBrains Mono',monospace;font-weight:600}
+    .form-group input,.form-group select,.form-group textarea{padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-size:13px;outline:none;transition:border .2s,box-shadow .2s;font-family:'Inter',sans-serif}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--neon);box-shadow:0 0 0 3px var(--neon-dim)}
+    .form-group textarea{resize:vertical;min-height:90px}
+    .form-group select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236e7681' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+    .form-group select option{background:var(--card);color:var(--fg)}
+    .btn-create{padding:12px 28px;background:var(--neon);color:#fff;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;border:none;border-radius:8px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:all .2s;margin-top:8px}
+    .btn-create:hover{box-shadow:0 0 25px var(--neon-glow)}
+    .btn-sm{padding:6px 14px;font-size:12px;border-radius:7px;font-family:'JetBrains Mono',monospace;cursor:pointer;font-weight:600;border:none;transition:all .2s}
+    .btn-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+    .btn-green:hover{background:var(--green);color:#000}
+    .btn-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+    .btn-red:hover{background:var(--red);color:#fff}
+    .btn-yellow{background:var(--yellow-dim);color:var(--yellow);border:1px solid rgba(240,192,64,.3)}
+    .btn-yellow:hover{background:var(--yellow);color:#000}
+    .btn-purple{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(180,74,255,.3)}
+    .btn-purple:hover{background:var(--purple);color:#fff}
+    .btn-cyan{background:var(--cyan-dim);color:var(--cyan);border:1px solid rgba(88,213,240,.3)}
+    .btn-cyan:hover{background:var(--cyan);color:#000}
+    #egg-variables{margin-top:16px;padding:16px;background:rgba(180,74,255,.04);border:1px dashed rgba(180,74,255,.15);border-radius:8px;display:none}
+    #egg-variables h4{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--neon);margin-bottom:12px}
+
+    /* ─── SHOP ─── */
+    .shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .shop-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;text-align:center;transition:all .2s}
+    .shop-card:hover{border-color:var(--purple);box-shadow:0 0 20px var(--purple-dim)}
+    .shop-card .shop-icon{font-size:32px;margin-bottom:10px}
+    .shop-card h3{font-family:'JetBrains Mono',monospace;font-size:14px;margin-bottom:6px}
+    .shop-card .shop-desc{font-size:12px;color:var(--fg-muted);margin-bottom:14px}
+    .shop-card .shop-cost{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--yellow);margin-bottom:14px}
+    .shop-card .shop-owned{font-size:11px;color:var(--fg-dim);margin-bottom:10px}
+    .btn-buy{padding:9px 22px;background:var(--purple-dim);color:var(--purple);border:1px solid rgba(180,74,255,.3);border-radius:8px;font-size:12px;font-family:'JetBrains Mono',monospace;font-weight:600;cursor:pointer;transition:all .2s}
+    .btn-buy:hover{background:var(--purple);color:#fff}
+
+    /* ─── COUPON ─── */
+    .coupon-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .coupon-box h3{font-family:'JetBrains Mono',monospace;font-size:15px;margin-bottom:14px;color:var(--yellow)}
+    .coupon-input-row{display:flex;gap:10px;align-items:flex-end}
+    .coupon-input-row .form-group{flex:1}
+    .coupon-input-row input{font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase}
+
+    /* ─── TICKETS ─── */
+    .ticket-grid{display:grid;gap:10px;margin-top:16px}
+    .ticket-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:14px;transition:border-color .2s;cursor:pointer}
+    .ticket-row:hover{border-color:var(--border-bright)}
+    .ticket-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .ticket-status.open{background:var(--green);box-shadow:0 0 6px var(--green)}
+    .ticket-status.in_progress{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+    .ticket-status.closed{background:var(--fg-dim)}
+    .ticket-body{flex:1;min-width:0}
+    .ticket-body h4{font-family:'JetBrains Mono',monospace;font-size:13px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ticket-body span{font-size:11px;color:var(--fg-muted)}
+    .ticket-meta{text-align:right;flex-shrink:0}
+    .ticket-id{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--fg-dim)}
+    .priority-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-weight:600;text-transform:uppercase}
+    .priority-normal{background:var(--cyan-dim);color:var(--cyan)}
+    .priority-high{background:var(--yellow-dim);color:var(--yellow)}
+    .priority-urgent{background:var(--red-dim);color:var(--red)}
+    .status-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-weight:600;text-transform:uppercase;margin-left:6px}
+    .status-open{background:var(--green-dim);color:var(--green)}
+    .status-in_progress{background:var(--yellow-dim);color:var(--yellow)}
+    .status-closed{background:var(--fg-dim);color:#888}
+
+    /* ─── TICKET MODAL ─── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:999;display:none;align-items:center;justify-content:center;padding:20px}
+    .modal-overlay.open{display:flex}
+    .modal-box{background:var(--card);border:1px solid var(--border-bright);border-radius:var(--radius);width:100%;max-width:640px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+    .modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .modal-header h3{font-family:'JetBrains Mono',monospace;font-size:15px}
+    .modal-close{background:none;border:none;color:var(--fg-muted);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px;transition:color .2s}
+    .modal-close:hover{color:var(--fg)}
+    .modal-body{padding:20px 22px;overflow-y:auto;flex:1}
+    .msg-list{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+    .msg-item{padding:12px 14px;border-radius:8px;font-size:13px;line-height:1.6}
+    .msg-user{background:var(--neon-dim);border:1px solid rgba(180,74,255,.15)}
+    .msg-admin{background:var(--purple-dim);border:1px solid rgba(180,74,255,.2)}
+    .msg-meta{font-size:11px;color:var(--fg-muted);margin-bottom:4px;font-family:'JetBrains Mono',monospace}
+    .msg-meta .is-admin{color:var(--purple);margin-left:6px}
+    .reply-form{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border);padding-top:16px}
+    .reply-form textarea{padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-size:13px;outline:none;resize:vertical;min-height:80px;font-family:'Inter',sans-serif}
+    .reply-form textarea:focus{border-color:var(--neon);box-shadow:0 0 0 3px var(--neon-dim)}
+    .reply-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+    /* ─── SUPPORT ─── */
+    .support-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:28px}
+    .support-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;display:flex;align-items:center;gap:16px}
+    .support-card .s-icon{font-size:32px;flex-shrink:0}
+    .support-card h3{font-family:'JetBrains Mono',monospace;font-size:14px;margin-bottom:4px}
+    .support-card p{font-size:12px;color:var(--fg-muted);margin-bottom:8px}
+    .support-card a{color:var(--neon);font-size:13px;font-weight:500;text-decoration:none}
+    .support-card a:hover{text-decoration:underline}
+
+    /* ─── ADMIN ─── */
+    .admin-panel{border:1px solid rgba(248,81,73,.2);border-radius:var(--radius);padding:24px;background:rgba(248,81,73,.03);margin-bottom:20px}
+    .admin-panel h3{font-family:'JetBrains Mono',monospace;color:var(--red);font-size:16px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+    .admin-panel-alt{border:1px solid rgba(180,74,255,.2);border-radius:var(--radius);padding:24px;background:rgba(180,74,255,.03);margin-bottom:20px}
+    .admin-panel-alt h3{font-family:'JetBrains Mono',monospace;color:var(--purple);font-size:16px;margin-bottom:16px}
+    .admin-panel-cyan{border:1px solid rgba(88,213,240,.2);border-radius:var(--radius);padding:24px;background:rgba(88,213,240,.03);margin-bottom:20px}
+    .admin-panel-cyan h3{font-family:'JetBrains Mono',monospace;color:var(--cyan);font-size:16px;margin-bottom:16px}
+    .admin-panel-yellow{border:1px solid rgba(240,192,64,.2);border-radius:var(--radius);padding:24px;background:rgba(240,192,64,.03);margin-bottom:20px}
+    .admin-panel-yellow h3{font-family:'JetBrains Mono',monospace;color:var(--yellow);font-size:16px;margin-bottom:16px}
+    .admin-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px}
+    .admin-table th{text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--fg-muted);font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.8px}
+    .admin-table td{padding:8px 12px;border-bottom:1px solid rgba(33,38,45,.5);vertical-align:middle}
+    .admin-form{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+    .admin-form .form-group{flex:1;min-width:120px}
+    .tab-bar{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0}
+    .tab-btn{padding:8px 18px;font-family:'JetBrains Mono',monospace;font-size:12px;background:none;border:none;color:var(--fg-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;text-transform:uppercase;letter-spacing:.5px}
+    .tab-btn.active{color:var(--neon);border-bottom-color:var(--neon)}
+    .tab-btn:hover:not(.active){color:var(--fg)}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+
+    /* ─── COUPON TAGS ─── */
+    .active-tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-weight:600}
+    .active-tag.on{background:var(--green-dim);color:var(--green)}
+    .active-tag.off{background:var(--fg-dim);color:#555}
+
+    /* ─── RESPONSIVE ─── */
+    @media(max-width:768px){
+      .burger{display:flex}
+      .sidebar{transform:translateX(-100%)}
+      .sidebar.open{transform:translateX(0)}
+      .main{margin-left:0}
+      .form-row{grid-template-columns:1fr}
+      .form-row.three{grid-template-columns:1fr}
+      .stats-grid{grid-template-columns:1fr 1fr}
+      .topbar-right .user-badge{display:none}
+    }
+    @media(max-width:480px){
+      .stats-grid{grid-template-columns:1fr}
+      .server-row{flex-direction:column;align-items:flex-start;gap:12px}
+      .admin-form{flex-direction:column}
+      .coupon-input-row{flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ TOPBAR ═══ -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="burger" id="burger" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </div>
+    <h1>⚡ PteroDash</h1>
+  </div>
+  <div class="topbar-right">
+    <div class="coin-badge">🪙 {{ coins }}</div>
+    <span class="user-badge">{{ username }}{% if is_admin %} 👑{% endif %}</span>
+    <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+  </div>
+</div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav class="sidebar" id="sidebar">
+  <div class="nav-section">Main</div>
+  <a href="#servers" class="active" onclick="showSection('servers',this)">📡 My Servers</a>
+  <a href="#create" onclick="showSection('create',this)">➕ Create Server</a>
+  <a href="#shop" onclick="showSection('shop',this)">🛒 Shop</a>
+  <a href="#coupons" onclick="showSection('coupons',this)">🎟️ Coupons</a>
+
+  <div class="nav-section">Help</div>
+  <a href="#tickets" onclick="showSection('tickets',this)">🎫 My Tickets</a>
+  <a href="#support" onclick="showSection('support',this)">📞 Support</a>
+
+  {% if is_admin %}
+  <div class="nav-section">Admin</div>
+  <a href="#admin" onclick="showSection('admin',this)">👑 Admin Panel</a>
+  {% endif %}
+</nav>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+
+  {% if message %}
+  <div class="flash flash-{{ message_type }}">{{ message }}</div>
+  {% endif %}
+
+  <!-- ── ANNOUNCEMENTS BANNER (shown on all sections) ── -->
+  {% if announcements %}
+  <div class="announce-bar" id="announce-bar">
+    {% for ann in announcements %}
+    <div class="announce-item {{ ann.kind }}">
+      <div class="ann-body">
+        <div class="ann-title">
+          {% if ann.pinned %}📌{% else %}📢{% endif %}
+          {{ ann.title }}
+          {% if ann.pinned %}<span class="pinned-badge">PINNED</span>{% endif %}
+        </div>
+        <div class="ann-text">{{ ann.body }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ══════════════════════════════════
+       SERVERS SECTION
+  ══════════════════════════════════ -->
+  <div class="section active" id="section-servers">
+    <h2 class="section-title">📡 My Servers</h2>
+    <p class="section-sub">Manage your game servers</p>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="label">Servers</div><div class="value neon">{{ server_count }} / 2</div></div>
+      <div class="stat-card"><div class="label">RAM</div><div class="value purple">{{ total_ram }} MB</div></div>
+      <div class="stat-card"><div class="label">CPU</div><div class="value cyan">{{ total_cpu }}%</div></div>
+      <div class="stat-card"><div class="label">Disk</div><div class="value yellow">{{ total_disk }} MB</div></div>
+    </div>
+
+    <div class="server-grid">
+      {% if servers %}
+        {% for server in servers %}
+        <div class="server-row">
+          <div class="server-info">
+            <h3>{{ server.name }}</h3>
+            <span>ID: {{ server.id }} · Created: {{ server.created_at }}</span>
+          </div>
+          <div class="server-actions">
+            <a href="{{ panel_url }}/server/{{ server.uuid }}" target="_blank" class="btn-manage">Manage →</a>
+            <form method="POST" action="{{ url_for('delete_server', server_id=server.id) }}" style="display:inline" onsubmit="return confirm('Delete server {{ server.name }}? This cannot be undone.')">
+              <button type="submit" class="btn-delete">Delete</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="icon">🚀</div>
+          <p>No servers yet. Create your first one!</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       CREATE SERVER SECTION
+  ══════════════════════════════════ -->
+  <div class="section" id="section-create">
+    <h2 class="section-title">➕ Create Server</h2>
+    <p class="section-sub">Deploy a new game server</p>
+
+    {% if server_count >= 2 %}
+    <div class="flash flash-warning">⚠️ You've reached the maximum of 2 servers. Delete one or purchase upgrades.</div>
+    {% else %}
+    <div class="form-card">
+      <form method="POST" action="{{ url_for('create_server_route') }}">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Server Name</label>
+            <input type="text" name="server_name" placeholder="My Awesome Server" required />
+          </div>
+          <div class="form-group">
+            <label>Node (optional)</label>
+            <select name="node_id" id="node-select">
+              <option value="">Auto-select</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Game Type (Nest)</label>
+            <select name="nest_id" id="nest-select" required onchange="loadEggs(this.value)">
+              <option value="">Select a nest…</option>
+              {% for nest in nests %}
+              <option value="{{ nest.attributes.id }}">{{ nest.attributes.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Egg</label>
+            <select name="egg_id" id="egg-select" required onchange="loadEggVars()">
+              <option value="">Select nest first…</option>
+            </select>
+          </div>
+        </div>
+        <div id="egg-variables">
+          <h4>⚙️ Environment Variables</h4>
+          <div id="egg-vars-container"></div>
+        </div>
+        <button type="submit" class="btn-create">🚀 Deploy Server</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ══════════════════════════════════
+       SHOP SECTION
+  ══════════════════════════════════ -->
+  <div class="section" id="section-shop">
+    <h2 class="section-title">🛒 Upgrade Shop</h2>
+    <p class="section-sub">Spend coins to boost your servers · Balance: <span style="color:var(--yellow);font-family:'JetBrains Mono',monospace">🪙 {{ coins }}</span></p>
+
+    <div class="shop-grid">
+      {% for key, upgrade in upgrades.items() %}
+      <div class="shop-card">
+        <div class="shop-icon">
+          {% if 'ram' in key %}🧠{% elif 'cpu' in key %}⚡{% else %}💾{% endif %}
+        </div>
+        <h3>{{ upgrade.name }}</h3>
+        <div class="shop-desc">
+          {% if upgrade.ram %}+{{ (upgrade.ram / 1024)|round(1) }}GB RAM{% endif %}
+          {% if upgrade.cpu %}+{{ upgrade.cpu }}% CPU{% endif %}
+          {% if upgrade.disk %}+{{ (upgrade.disk / 1024)|round(1) }}GB Disk{% endif %}
+        </div>
+        <div class="shop-cost">🪙 {{ upgrade.cost }}</div>
+        <div class="shop-owned">Owned: {{ user_upgrade_counts.get(key.replace('_upgrade','_upgrades'), 0) }}</div>
+        <form method="POST" action="{{ url_for('buy_upgrade', upgrade_key=key) }}">
+          <button type="submit" class="btn-buy" {% if coins < upgrade.cost %}disabled style="opacity:.4;cursor:not-allowed"{% endif %}>
+            {% if coins < upgrade.cost %}Not enough coins{% else %}Purchase{% endif %}
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       COUPONS SECTION
+  ══════════════════════════════════ -->
+  <div class="section" id="section-coupons">
+    <h2 class="section-title">🎟️ Coupons</h2>
+    <p class="section-sub">Redeem coupon codes for free coins</p>
+
+    <div class="coupon-box">
+      <h3>🎁 Redeem a Coupon Code</h3>
+      <form method="POST" action="{{ url_for('redeem_coupon_route') }}">
+        <div class="coupon-input-row">
+          <div class="form-group">
+            <label>Coupon Code</label>
+            <input type="text" name="code" placeholder="ENTER-CODE-HERE" required autocomplete="off" />
+          </div>
+          <button type="submit" class="btn-create" style="margin-top:0">Redeem</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="form-card" style="margin-top:16px">
+      <p style="color:var(--fg-muted);font-size:13px">Coupon codes give you free coins that can be used in the shop to upgrade your servers. Codes are case-insensitive and single-use per account.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TICKETS SECTION (user)
+  ══════════════════════════════════ -->
+  <div class="section" id="section-tickets">
+    <h2 class="section-title">🎫 Support Tickets</h2>
+    <p class="section-sub">Open a ticket and our team will respond</p>
+
+    <!-- Open new ticket form -->
+    <div class="form-card" style="margin-bottom:24px">
+      <h3 style="font-family:'JetBrains Mono',monospace;font-size:14px;margin-bottom:14px;color:var(--neon)">➕ Open New Ticket</h3>
+      <form method="POST" action="{{ url_for('open_ticket') }}">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Subject</label>
+            <input type="text" name="subject" placeholder="Brief description of issue" required />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select name="category">
+              <option value="General">General</option>
+              <option value="Billing">Billing</option>
+              <option value="Technical">Technical</option>
+              <option value="Server Issue">Server Issue</option>
+              <option value="Account">Account</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Message</label>
+            <textarea name="body" placeholder="Describe your issue in detail…" required></textarea>
+          </div>
+        </div>
+        <button type="submit" class="btn-create">📨 Submit Ticket</button>
+      </form>
+    </div>
+
+    <!-- User's tickets list -->
+    <h3 style="font-family:'JetBrains Mono',monospace;font-size:14px;margin-bottom:12px;color:var(--fg-muted)">YOUR TICKETS</h3>
+    {% if user_tickets %}
+    <div class="ticket-grid">
+      {% for tid, t in user_tickets.items() %}
+      <div class="ticket-row" onclick="openTicketModal('{{ tid }}')">
+        <div class="ticket-status {{ t.status }}"></div>
+        <div class="ticket-body">
+          <h4>{{ t.subject }}</h4>
+          <span>{{ t.category }} · {{ t.messages|length }} message(s) · Updated {{ t.updated_at[:10] }}</span>
+        </div>
+        <div class="ticket-meta">
+          <div class="ticket-id">{{ tid }}</div>
+          <span class="status-badge status-{{ t.status }}">{{ t.status.replace('_',' ') }}</span>
+          <span class="priority-badge priority-{{ t.priority }}">{{ t.priority }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="icon">🎫</div>
+      <p>No tickets yet. Open one above if you need help!</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ══════════════════════════════════
+       SUPPORT SECTION
+  ══════════════════════════════════ -->
+  <div class="section" id="section-support">
+    <h2 class="section-title">📞 Support</h2>
+    <p class="section-sub">Need help? We're here for you</p>
+
+    <div class="support-cards">
+      <div class="support-card">
+        <div class="s-icon">🎫</div>
+        <div>
+          <h3>Support Tickets</h3>
+          <p>Open a ticket and get help from our team</p>
+          <a href="#tickets" onclick="showSection('tickets', document.querySelector('[href=\'#tickets\']'))">Open a Ticket →</a>
+        </div>
+      </div>
+      <div class="support-card">
+        <div class="s-icon">💬</div>
+        <div>
+          <h3>Discord Community</h3>
+          <p>Join our community for help and updates</p>
+          <a href="{{ discord_link }}" target="_blank">Join Discord →</a>
+        </div>
+      </div>
+      <div class="support-card">
+        <div class="s-icon">📱</div>
+        <div>
+          <h3>Phone Support</h3>
+          <p>Call us for urgent issues</p>
+          <a href="tel:{{ phone_support }}">{{ phone_support }}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       ADMIN SECTION
+  ══════════════════════════════════ -->
+  {% if is_admin %}
+  <div class="section" id="section-admin">
+    <h2 class="section-title">👑 Admin Panel</h2>
+    <p class="section-sub">Manage users, tickets, coupons and announcements</p>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="showAdminTab('users', this)">👥 Users</button>
+      <button class="tab-btn" onclick="showAdminTab('tickets', this)">🎫 Tickets</button>
+      <button class="tab-btn" onclick="showAdminTab('coupons', this)">🎟️ Coupons</button>
+      <button class="tab-btn" onclick="showAdminTab('announcements', this)">📢 Announcements</button>
+    </div>
+
+    <!-- ── TAB: USERS ── -->
+    <div class="tab-content active" id="admin-tab-users">
+      <div class="admin-panel">
+        <h3>🪙 Give Coins</h3>
+        <form method="POST" action="{{ url_for('admin_give_coins') }}" class="admin-form">
+          <div class="form-group">
+            <label>Username</label>
+            <select name="target_user" required>
+              {% for uname in all_users %}<option value="{{ uname }}">{{ uname }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Amount</label>
+            <input type="number" name="amount" min="1" placeholder="100" required />
+          </div>
+          <button type="submit" class="btn-create">Give Coins</button>
+        </form>
+      </div>
+
+      <div class="admin-panel">
+        <h3>👥 All Users</h3>
+        <div style="overflow-x:auto">
+          <table class="admin-table">
+            <thead><tr><th>User</th><th>Email</th><th>Coins</th><th>Servers</th><th>Role</th></tr></thead>
+            <tbody>
+              {% for uname, udata in all_users.items() %}
+              <tr>
+                <td style="font-family:'JetBrains Mono',monospace">{{ uname }}</td>
+                <td style="color:var(--fg-muted)">{{ udata.email }}</td>
+                <td style="color:var(--yellow);font-family:'JetBrains Mono',monospace">🪙 {{ udata.coins }}</td>
+                <td>{{ all_server_counts.get(uname, 0) }}</td>
+                <td>{% if udata.is_admin %}<span class="priority-badge priority-urgent">Admin</span>{% else %}—{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB: TICKETS ── -->
+    <div class="tab-content" id="admin-tab-tickets">
+      <div class="admin-panel-cyan">
+        <h3>🎫 All Support Tickets</h3>
+        {% if all_tickets_admin %}
+        <div class="ticket-grid">
+          {% for tid, t in all_tickets_admin.items() %}
+          <div class="ticket-row" style="cursor:default">
+            <div class="ticket-status {{ t.status }}"></div>
+            <div class="ticket-body">
+              <h4>{{ t.subject }}</h4>
+              <span>{{ t.owner }} · {{ t.category }} · {{ t.messages|length }} msg · {{ t.updated_at[:10] }}</span>
+            </div>
+            <div class="ticket-meta" style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+              <div class="ticket-id">{{ tid }}</div>
+              <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+                <span class="status-badge status-{{ t.status }}">{{ t.status.replace('_',' ') }}</span>
+                <span class="priority-badge priority-{{ t.priority }}">{{ t.priority }}</span>
+              </div>
+              <div style="display:flex;gap:4px;flex-wrap:wrap">
+                <!-- Reply -->
+                <button class="btn-sm btn-cyan" onclick="openAdminTicketModal('{{ tid }}')">Reply</button>
+                <!-- Priority -->
+                <form method="POST" action="{{ url_for('admin_set_priority', tid=tid) }}" style="display:inline;display:flex;gap:4px">
+                  <select name="priority" style="padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--fg);font-size:11px;font-family:'JetBrains Mono',monospace">
+                    <option value="normal" {% if t.priority=='normal' %}selected{% endif %}>Normal</option>
+                    <option value="high" {% if t.priority=='high' %}selected{% endif %}>High</option>
+                    <option value="urgent" {% if t.priority=='urgent' %}selected{% endif %}>Urgent</option>
+                  </select>
+                  <button type="submit" class="btn-sm btn-yellow">Set</button>
+                </form>
+                <!-- Close -->
+                {% if t.status != 'closed' %}
+                <form method="POST" action="{{ url_for('close_ticket', tid=tid) }}" style="display:inline">
+                  <button type="submit" class="btn-sm btn-red">Close</button>
+                </form>
+                {% endif %}
+                <!-- Delete -->
+                <form method="POST" action="{{ url_for('admin_delete_ticket', tid=tid) }}" style="display:inline" onsubmit="return confirm('Delete ticket {{ tid }}?')">
+                  <button type="submit" class="btn-sm btn-red" style="opacity:.7">🗑</button>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state"><div class="icon">🎫</div><p>No tickets yet.</p></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── TAB: COUPONS ── -->
+    <div class="tab-content" id="admin-tab-coupons">
+      <div class="admin-panel-alt">
+        <h3>➕ Create Coupon</h3>
+        <form method="POST" action="{{ url_for('admin_create_coupon') }}">
+          <div class="form-row three">
+            <div class="form-group">
+              <label>Code</label>
+              <input type="text" name="code" placeholder="SUMMER50" required style="font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px" />
+            </div>
+            <div class="form-group">
+              <label>Coins to Give</label>
+              <input type="number" name="coins" placeholder="100" min="1" required />
+            </div>
+            <div class="form-group">
+              <label>Max Uses (0 = unlimited)</label>
+              <input type="number" name="max_uses" placeholder="0" min="0" value="0" />
+            </div>
+          </div>
+          <div class="form-row full">
+            <div class="form-group">
+              <label>Expires At (leave blank = never)</label>
+              <input type="datetime-local" name="expires_at" />
+            </div>
+          </div>
+          <button type="submit" class="btn-create" style="background:var(--purple);color:#fff">Create Coupon</button>
+        </form>
+      </div>
+
+      <div class="admin-panel-alt">
+        <h3>🎟️ All Coupons</h3>
+        {% if coupons %}
+        <div style="overflow-x:auto">
+          <table class="admin-table">
+            <thead><tr><th>Code</th><th>Coins</th><th>Max Uses</th><th>Used</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for code, c in coupons.items() %}
+              <tr>
+                <td style="font-family:'JetBrains Mono',monospace;color:var(--yellow);letter-spacing:1px">{{ code }}</td>
+                <td style="color:var(--green);font-family:'JetBrains Mono',monospace">🪙 {{ c.coins }}</td>
+                <td style="color:var(--fg-muted)">{% if c.max_uses == 0 %}∞{% else %}{{ c.max_uses }}{% endif %}</td>
+                <td>{{ c.used_by|length }}</td>
+                <td style="color:var(--fg-muted);font-size:12px">{% if c.expires_at %}{{ c.expires_at[:10] }}{% else %}Never{% endif %}</td>
+                <td><span class="active-tag {% if c.active %}on{% else %}off{% endif %}">{% if c.active %}Active{% else %}Disabled{% endif %}</span></td>
+                <td style="display:flex;gap:6px;flex-wrap:wrap">
+                  <form method="POST" action="{{ url_for('admin_toggle_coupon', code=code) }}" style="display:inline">
+                    <button type="submit" class="btn-sm {% if c.active %}btn-yellow{% else %}btn-green{% endif %}">
+                      {% if c.active %}Disable{% else %}Enable{% endif %}
+                    </button>
+                  </form>
+                  <form method="POST" action="{{ url_for('admin_delete_coupon', code=code) }}" style="display:inline" onsubmit="return confirm('Delete coupon {{ code }}?')">
+                    <button type="submit" class="btn-sm btn-red">Delete</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state"><div class="icon">🎟️</div><p>No coupons yet. Create one above.</p></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── TAB: ANNOUNCEMENTS ── -->
+    <div class="tab-content" id="admin-tab-announcements">
+      <div class="admin-panel-yellow">
+        <h3>➕ Create Announcement</h3>
+        <form method="POST" action="{{ url_for('admin_create_announcement') }}">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Title</label>
+              <input type="text" name="title" placeholder="Maintenance tonight at 2AM" required />
+            </div>
+            <div class="form-group">
+              <label>Type</label>
+              <select name="kind">
+                <option value="info">ℹ️ Info</option>
+                <option value="warning">⚠️ Warning</option>
+                <option value="success">✅ Success</option>
+                <option value="danger">🚨 Danger</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row full">
+            <div class="form-group">
+              <label>Message</label>
+              <textarea name="body" placeholder="Announcement details…" required></textarea>
+            </div>
+          </div>
+          <div class="form-row full" style="margin-bottom:0">
+            <div class="form-group" style="flex-direction:row;align-items:center;gap:10px">
+              <input type="checkbox" name="pinned" id="pinned-check" style="width:16px;height:16px;accent-color:var(--neon)" />
+              <label for="pinned-check" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--fg-muted)">Pin to top of dashboard</label>
+            </div>
+          </div>
+          <button type="submit" class="btn-create" style="background:var(--yellow);color:#000">Publish</button>
+        </form>
+      </div>
+
+      <div class="admin-panel-yellow">
+        <h3>📢 All Announcements</h3>
+        {% if announcements_all %}
+        <div style="display:flex;flex-direction:column;gap:10px">
+          {% for ann in announcements_all %}
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:14px">
+            <div style="flex:1">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;margin-bottom:3px">
+                {% if ann.pinned %}📌 {% endif %}{{ ann.title }}
+                <span style="font-size:10px;padding:2px 7px;border-radius:4px;margin-left:6px;font-weight:600;
+                  {% if ann.kind=='info' %}background:var(--cyan-dim);color:var(--cyan)
+                  {% elif ann.kind=='warning' %}background:var(--yellow-dim);color:var(--yellow)
+                  {% elif ann.kind=='success' %}background:var(--green-dim);color:var(--green)
+                  {% else %}background:var(--red-dim);color:var(--red){% endif %}">{{ ann.kind|upper }}</span>
+                <span class="active-tag {% if ann.active %}on{% else %}off{% endif %}" style="margin-left:4px">{% if ann.active %}Visible{% else %}Hidden{% endif %}</span>
+              </div>
+              <div style="font-size:12px;color:var(--fg-muted)">{{ ann.body[:120] }}{% if ann.body|length > 120 %}…{% endif %}</div>
+              <div style="font-size:11px;color:var(--fg-dim);margin-top:4px;font-family:'JetBrains Mono',monospace">{{ ann.created_at[:10] }} by {{ ann.created_by }}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;flex-direction:column;align-items:flex-end">
+              <form method="POST" action="{{ url_for('admin_toggle_announcement', aid=ann.id) }}" style="display:inline">
+                <button type="submit" class="btn-sm {% if ann.active %}btn-yellow{% else %}btn-green{% endif %}">
+                  {% if ann.active %}Hide{% else %}Show{% endif %}
+                </button>
+              </form>
+              <form method="POST" action="{{ url_for('admin_delete_announcement', aid=ann.id) }}" style="display:inline" onsubmit="return confirm('Delete this announcement?')">
+                <button type="submit" class="btn-sm btn-red">Delete</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state"><div class="icon">📢</div><p>No announcements yet.</p></div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+  {% endif %}
+
+</div><!-- end .main -->
+
+<!-- ═══ TICKET MODAL ═══ -->
+<div class="modal-overlay" id="ticket-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modal-ticket-title">Ticket</h3>
+      <button class="modal-close" onclick="closeTicketModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-ticket-body">
+      <div style="text-align:center;padding:30px;color:var(--fg-muted)">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── Burger ── */
+  function toggleMenu() {
+    document.getElementById('burger').classList.toggle('active');
+    document.getElementById('sidebar').classList.toggle('open');
+  }
+
+  /* ── Section nav ── */
+  function showSection(name, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+    const sec = document.getElementById('section-' + name);
+    if (sec) sec.classList.add('active');
+    if (el) el.classList.add('active');
+    if (window.innerWidth <= 768) {
+      document.getElementById('burger').classList.remove('active');
+      document.getElementById('sidebar').classList.remove('open');
+    }
+  }
+
+  /* ── Hash on load ── */
+  (function() {
+    const hash = window.location.hash.replace('#','');
+    if (hash) {
+      const link = document.querySelector('.sidebar a[href="#' + hash + '"]');
+      if (link) showSection(hash, link);
+    }
+  })();
+
+  /* ── Admin tabs ── */
+  function showAdminTab(tab, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('admin-tab-' + tab).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  /* ── Load nodes ── */
+  fetch('/api/nodes')
+    .then(r => r.json())
+    .then(nodes => {
+      const sel = document.getElementById('node-select');
+      nodes.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n.id;
+        opt.textContent = n.name + (n.fqdn ? ' (' + n.fqdn + ')' : '');
+        if (n.maintenance_mode) { opt.disabled = true; opt.textContent += ' [maintenance]'; }
+        sel.appendChild(opt);
+      });
+    }).catch(() => {});
+
+  /* ── Load eggs ── */
+  function loadEggs(nestId) {
+    const eggSel = document.getElementById('egg-select');
+    eggSel.innerHTML = '<option value="">Loading…</option>';
+    document.getElementById('egg-variables').style.display = 'none';
+    if (!nestId) { eggSel.innerHTML = '<option value="">Select nest first…</option>'; return; }
+    fetch('/api/eggs/' + nestId)
+      .then(r => r.json())
+      .then(eggs => {
+        eggSel.innerHTML = '<option value="">Choose an egg…</option>';
+        eggs.forEach(e => {
+          const opt = document.createElement('option');
+          opt.value = e.attributes.id;
+          opt.textContent = e.attributes.name;
+          opt.dataset.nestId = nestId;
+          eggSel.appendChild(opt);
+        });
+      }).catch(() => { eggSel.innerHTML = '<option value="">Error loading eggs</option>'; });
+  }
+
+  /* ── Load egg variables ── */
+  function loadEggVars() {
+    const eggSel = document.getElementById('egg-select');
+    const eggId = eggSel.value;
+    const nestId = document.getElementById('nest-select').value;
+    const container = document.getElementById('egg-vars-container');
+    const wrapper = document.getElementById('egg-variables');
+    if (!eggId || !nestId) { wrapper.style.display = 'none'; return; }
+    fetch('/api/egg-details/' + nestId + '/' + eggId)
+      .then(r => r.json())
+      .then(data => {
+        container.innerHTML = '';
+        if (data.variables && data.variables.filter(v => v.user_viewable).length > 0) {
+          wrapper.style.display = 'block';
+          data.variables.filter(v => v.user_viewable).forEach(v => {
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.style.marginBottom = '12px';
+            const label = document.createElement('label');
+            label.textContent = v.name + (v.rules && v.rules.includes('required') ? ' *' : '');
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = 'env_' + v.env_variable;
+            input.value = v.default_value || '';
+            input.placeholder = v.description || v.env_variable;
+            if (!v.user_editable) { input.readOnly = true; input.style.opacity = '.5'; }
+            div.appendChild(label);
+            div.appendChild(input);
+            if (v.description) {
+              const hint = document.createElement('div');
+              hint.style.cssText = 'font-size:11px;color:var(--fg-dim);margin-top:3px';
+              hint.textContent = v.description;
+              div.appendChild(hint);
+            }
+            container.appendChild(div);
+          });
+        } else {
+          wrapper.style.display = 'none';
+        }
+      }).catch(() => { wrapper.style.display = 'none'; });
+  }
+
+  /* ── Ticket Modal ── */
+  let currentTicketId = null;
+  let isAdminView = false;
+
+  function openTicketModal(tid) { _openModal(tid, false); }
+  function openAdminTicketModal(tid) { _openModal(tid, true); }
+
+  function _openModal(tid, adminMode) {
+    currentTicketId = tid;
+    isAdminView = adminMode;
+    document.getElementById('ticket-modal').classList.add('open');
+    document.getElementById('modal-ticket-body').innerHTML = '<div style="text-align:center;padding:30px;color:var(--fg-muted)">Loading…</div>';
+    fetch('/api/ticket/' + tid)
+      .then(r => r.json())
+      .then(t => {
+        document.getElementById('modal-ticket-title').innerHTML =
+          t.subject + ' <span class="status-badge status-' + t.status + '">' + t.status.replace('_',' ') + '</span>' +
+          ' <span class="priority-badge priority-' + t.priority + '">' + t.priority + '</span>';
+        let html = '<div class="msg-list">';
+        t.messages.forEach(m => {
+          html += '<div class="msg-item ' + (m.is_admin ? 'msg-admin' : 'msg-user') + '">';
+          html += '<div class="msg-meta">' + esc(m.author) + (m.is_admin ? '<span class="is-admin"> [Staff]</span>' : '') + ' · ' + m.sent_at.slice(0,16).replace('T',' ') + '</div>';
+          html += '<div>' + esc(m.body).replace(/\n/g,'<br>') + '</div></div>';
+        });
+        html += '</div>';
+        if (t.status !== 'closed') {
+          const replyAction = adminMode
+            ? '/tickets/' + tid + '/reply'
+            : '/tickets/' + tid + '/reply';
+          html += '<form class="reply-form" method="POST" action="' + replyAction + '">';
+          html += '<textarea name="body" placeholder="Type your reply…" required></textarea>';
+          html += '<div class="reply-actions">';
+          html += '<button type="submit" class="btn-sm btn-green">Send Reply</button>';
+          html += '<a href="/tickets/' + tid + '/close" onclick="return confirm(\'Close this ticket?\')" style="text-decoration:none"><button type="button" class="btn-sm btn-red" onclick="fetch(\'/tickets/' + tid + '/close\',{method:\'POST\'}).then(()=>location.reload())">Close Ticket</button></a>';
+          html += '</div></form>';
+        } else {
+          html += '<div style="text-align:center;padding:14px;color:var(--fg-dim);font-size:13px;font-family:\'JetBrains Mono\',monospace">This ticket is closed.</div>';
+        }
+        document.getElementById('modal-ticket-body').innerHTML = html;
+      }).catch(() => {
+        document.getElementById('modal-ticket-body').innerHTML = '<div style="color:var(--red);padding:20px">Failed to load ticket.</div>';
+      });
+  }
+
+  function closeTicketModal() {
+    document.getElementById('ticket-modal').classList.remove('open');
+    currentTicketId = null;
+  }
+
+  document.getElementById('ticket-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeTicketModal();
+  });
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTicketModal(); });
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
